@@ -2,7 +2,6 @@ module Main where
 
 import Prelude
 import Control.Monad.Eff (Eff)
-import Control.Monad.Eff.Console as Console
 import Crypto.Simple as Crypto
 import Data.Either (Either(..))
 import Data.Int as Int

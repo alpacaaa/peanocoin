@@ -32,7 +32,7 @@ import Data.Int as Int
 import Data.Monoid (mempty)
 import Data.Set as Set
 import Data.Time.Duration (Seconds(..), convertDuration)
-import Data.Traversable as Traversable
+import Data.Traversable (for)
 -- import Debug.Trace as Debug
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (describe, it)
@@ -150,7 +150,7 @@ ledgerTests = do
 
     let ledger = tryE $ Ledger.buildLedger blockchain
 
-    _ <- Traversable.for pairs \pair -> do
+    _ <- for pairs \pair -> do
         let
             pk =
                 try $ Address.pkToAddress pair.public

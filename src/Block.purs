@@ -9,13 +9,12 @@ import Data.Argonaut.Encode.Combinators ((:=), (~>))
 import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Either as Either
-import Data.Bifunctor as Bifunctor
 import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.Monoid (mempty)
 import Data.StrMap (StrMap)
 import Data.String as String
-import Data.Traversable as Traversable
+import Data.Traversable (traverse)
 
 import Crypto.Simple as Crypto
 import Crypto.Hash.MerkleTree as MerkleTree
@@ -211,8 +210,11 @@ validateBlock { prev: Block prevBlock, current: Block block }
 
         validateBlockReward block.transactions block.header
 
-        Traversable.traverse Tx.validateTransactionSig block.transactions
-            # Bifunctor.bimap InvalidBlockTx (const unit)
+        let result = traverse Tx.validateTransactionSig block.transactions
+
+        case result of
+            Right _  -> Right unit
+            Left err -> Left $ InvalidBlockTx err
 
 
 checkProofOfWork :: BlockHeader -> Boolean

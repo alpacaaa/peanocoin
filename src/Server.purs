@@ -552,8 +552,6 @@ logger stateRef = do
 
 appSetup :: StateRef -> Express.AppM AppEffects Unit
 appSetup stateRef = do
-    liftEff $ Console.log "Setting up"
-
     Express.setProp "json spaces" 4.0
     Express.use (logger stateRef)
 
