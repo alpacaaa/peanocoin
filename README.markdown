@@ -45,17 +45,23 @@ Nodes start with a balance of zero coins, meaning that coins aren't created out 
 
 To get some coins, you have to mine blocks. Reward is currently set at `100` coins for the miner. So when you boot a new node, either `/mine-block` or `/transfer` some coins from another node.
 
+Take a look at the integration tests if you want to see how nodes are booted up and how they interact over the network.
+
+
+
+### API
 
 ##### `/`
 
 Gives you an overview of the node state.
-    - `address` This is your node public address (ie. the address other peers will use to transfer coins to you).
 
-    - `blockchain` Contains all the blocks known by this node.
+- `address` This is your node public address (ie. the address other peers will use to transfer coins to you).
 
-    - `memPool` Transactions that are yet to be mined are held in the mempool.
+- `blockchain` Contains all the blocks known by this node.
 
-    - `peers` Known peers (other nodes)
+- `memPool` Transactions that are yet to be mined are held in the mempool.
+
+- `peers` Known peers (other nodes)
 
 
 ##### `/boot?ip=other-node-ip`
@@ -68,14 +74,17 @@ http://localhost:4444/boot?ip=http://localhost:3000
 
 This will requests all known peers and try to rebuild the blockchain up to the last known block.
 
+
+
 ##### `/ledger`
 
-Ledger status. Basically answers to the question "How many coins are owned by each node?"
+Ledger status. Basically answers the question "How many coins are owned by each node?"
 
 
 ##### `/transfer/:other_address/:amount`
 
 Transfer `:amount` coins to `:other_address`. Will fail if balance is insufficient.
+
 Note that the ledger won't reflect the transfer until the transaction is mined in a block.
 The transaction is broadcasted to known peers and included in the mempool.
 
