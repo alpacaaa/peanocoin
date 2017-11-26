@@ -6,7 +6,7 @@ import Prelude
 import Data.Array as Array
 import Data.Maybe (Maybe(..))
 
-import Peanocoin.Block as Block
+import Peanocoin.Block (Block(..))
 import Peanocoin.Transaction as Tx
 import Peanocoin.Hash (Hash)
 
@@ -21,8 +21,8 @@ find memPool hash =
 
 
 -- Purge mined transactions from MemPool
-purgeMemPool :: MemPool -> Block.Block -> MemPool
-purgeMemPool memPool (Block.Block { transactions }) =
+purgeMemPool :: MemPool -> Block -> MemPool
+purgeMemPool memPool (Block { transactions }) =
     Array.filter purge memPool
     where
         purge tx =

@@ -11,7 +11,7 @@ import Peanocoin.MemPool (MemPool)
 import Peanocoin.Block as Block
 import Peanocoin.Blockchain as Blockchain
 import Peanocoin.MemPool as MemPool
-import Peanocoin.Transaction as Transaction
+import Peanocoin.Transaction as Tx
 
 import Crypto.Simple as Crypto
 import Data.Array as Array
@@ -114,23 +114,23 @@ handleBlock (State state) block =
 
 handleTransaction :: State -> Transaction -> Result
 handleTransaction (State state) tx
-    | Transaction.isRewardTx tx
+    | Tx.isRewardTx tx
         = Left (ErrorTx TxMustBeTransfer)
 
-    | Maybe.isJust $ MemPool.find state.memPool (Transaction.hashTransaction tx)
+    | Maybe.isJust $ MemPool.find state.memPool (Tx.hashTransaction tx)
         = Left (ErrorTx TxAlreadyInMemPool)
 
     | otherwise
         = Either.either reject accept validate
         where
-            txHash   = Transaction.hashTransaction tx
+            txHash   = Tx.hashTransaction tx
 
             validate =
                 case Blockchain.txInBlockchain state.blockchain txHash of
                     Just { block } ->
                         Left $ TxAlreadyInBlock (Block.hashBlock block)
                     Nothing ->
-                        Transaction.validateTransactionSig tx
+                        Tx.validateTransactionSig tx
 
             accept _ =
                 let

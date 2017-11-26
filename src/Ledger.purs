@@ -12,7 +12,7 @@ import Data.Map as Map
 
 import Peanocoin.Address as Address
 import Peanocoin.Transaction as Tx
-import Peanocoin.Block as Block
+import Peanocoin.Block (Block(..))
 import Peanocoin.Blockchain as Blockchain
 
 
@@ -36,8 +36,8 @@ buildLedger :: Blockchain.Blockchain -> Either TransferError Ledger
 buildLedger chain =
     foldM applyBlock mempty chain
 
-applyBlock :: Ledger -> Block.Block -> Either TransferError Ledger
-applyBlock ledger (Block.Block block) =
+applyBlock :: Ledger -> Block -> Either TransferError Ledger
+applyBlock ledger (Block block) =
     foldM applyTransaction ledger block.transactions
 
 applyTransaction :: Ledger -> Tx.Transaction -> Either TransferError Ledger

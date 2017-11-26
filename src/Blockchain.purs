@@ -9,12 +9,13 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 
 import Peanocoin.Transaction as Tx
+import Peanocoin.Block (Block(..))
 import Peanocoin.Block as Block
 import Peanocoin.Hash (Hash)
 
 
 type Blockchain
-    = Array Block.Block
+    = Array Block
 
 
 data FindBlockError
@@ -28,17 +29,17 @@ instance showFindBlockError :: Show FindBlockError where
     show = genericShow
 
 
-blockMatchHash :: Hash -> Block.Block -> Boolean
+blockMatchHash :: Hash -> Block -> Boolean
 blockMatchHash hash block =
     Block.hashBlock block == hash
 
 
-findBlock :: Blockchain -> Hash -> Either FindBlockError Block.Block
+findBlock :: Blockchain -> Hash -> Either FindBlockError Block
 findBlock chain hash =
     Either.note (FindBlockInvalidHash hash) $ Array.find (blockMatchHash hash) chain
 
 
-findBlockAfter :: Blockchain -> Hash -> Either FindBlockError Block.Block
+findBlockAfter :: Blockchain -> Hash -> Either FindBlockError Block
 findBlockAfter chain hash = do
     index <- Either.note
         (FindBlockInvalidHash hash)
@@ -47,7 +48,7 @@ findBlockAfter chain hash = do
     Either.note FindBlockNoMoreBlocks $ Array.index chain (index + 1)
 
 
-txInBlockchain :: Blockchain -> Hash -> Maybe { block :: Block.Block, tx :: Tx.Transaction }
+txInBlockchain :: Blockchain -> Hash -> Maybe { block :: Block, tx :: Tx.Transaction }
 txInBlockchain blockchain hash =
     let
         find acc block =
@@ -55,7 +56,7 @@ txInBlockchain blockchain hash =
                 Just _  -> acc
                 Nothing ->
                     let
-                        (Block.Block { transactions }) = block
+                        (Block { transactions }) = block
                     in
                     Array.find (Tx.txMatchHash hash) transactions
                         # map (\txFound -> { block, tx: txFound })
