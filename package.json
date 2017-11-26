@@ -1,0 +1,30 @@
+{
+  "name": "peanocoin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "base-x": "^3.0.2",
+    "express": "^4.16.2",
+    "secp256k1": "^3.3.0",
+    "xhr2": "^0.1.4",
+    "yargs": "^9.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alpacaaa/peanocoin"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alpacaaa/peanocoin/issues"
+  },
+  "homepage": "https://github.com/alpacaaa/peanocoin#README"
+}
