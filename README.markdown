@@ -35,6 +35,17 @@ Node will be reachable at `http://localhost:4000`
 You can spawn multiple nodes on the same machine.
 
 
+
+### Known issues
+
+Things I need to fix.
+
+- [ ] Mining difficulty is static: Proof of Works is practically non existant as all mining is currently set to `0` difficulty. Ideally, mining a block should take a few seconds to demonstrate how PoW is useful in running a blockchain.
+- [ ] Reward is static, maybe it could decrease over time (not that big of a deal).
+- [ ] Node discovery is still a bit rusty. I'd like peers to be added to a node's peers list whenever a request gets through, not just when explicitely requesting `/peers`.
+
+
+
 ### Usage
 
 Peanocoin is built to be simple to use, so you can interact with any node directly from your browser.
