@@ -19,6 +19,15 @@ A PoC criptocurrency written in Purescript. Inspired by [nanocoin](https://githu
 ```bash
 bower install --dev
 npm install --dev
+pulp build
+```
+
+### Running
+
+Spawn a node on a specific port (default `3000`).
+
+```bash
+node spawn-peanos.js --port 4000
 ```
 
 ### Testing
@@ -29,7 +38,7 @@ Unit tests
 pulp test
 ```
 
-Integration tests (requires `go` to installed)
+Integration tests (requires `go` to be installed)
 ```bash
 go run yolo.go
 ```
