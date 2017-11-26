@@ -84,7 +84,7 @@ decodeJson json = do
     Argonaut.decodeJson parsed
 
 peersToArray :: Set Peer -> Array Peer
-peersToArray nodes = Set.toUnfoldable nodes
+peersToArray peers = Set.toUnfoldable peers
 
 logInfo :: forall m. (MonadAff AppEffects m) => String -> m Unit
 logInfo = liftEff <<< Console.log
@@ -178,8 +178,8 @@ describeInvalidTxError = case _ of
 
 
 indexHandler :: StateRef -> AppHandler
-indexHandler node = do
-    State { keyPair, blockchain, memPool, nodes } <- liftEff $ Ref.readRef node
+indexHandler stateRef = do
+    State { keyPair, blockchain, memPool, nodes } <- liftEff $ Ref.readRef stateRef
     let
         address =
             Address.pkToAddress keyPair.public
@@ -210,8 +210,8 @@ handleUpdate result =
 
 
 process :: StateRef -> Event -> AppHandler
-process node event = do
-    result <- process' node event
+process stateRef event = do
+    result <- process' stateRef event
     handleUpdate result
 
 
@@ -219,15 +219,15 @@ process' :: forall m. (MonadAff AppEffects m)
          => StateRef
          -> Event
          -> m (Either Error (Array Event))
-process' node event = do
+process' stateRef event = do
     logInfo (describeEvent event)
 
-    current <- liftEff $ Ref.readRef node
+    current <- liftEff $ Ref.readRef stateRef
     let result = Node.updateState current event
 
     case result of
         Right { state, effect } -> do
-            liftEff $ Ref.writeRef node state
+            liftEff $ Ref.writeRef stateRef state
             events <- liftAff $ processEffects state effect
             pure (Right events)
 
@@ -302,8 +302,8 @@ ignoreResponse :: Affjax.AffjaxRequest Json
 ignoreResponse request = Affjax.affjax request
 
 broadcast :: Peer -> String -> Set Peer -> Aff AppEffects Unit
-broadcast origin path nodes =
-    void $ traverse loop (peersToArray nodes)
+broadcast origin path peers =
+    void $ traverse loop (peersToArray peers)
 
     where
         loop peer = do
@@ -317,26 +317,26 @@ broadcast origin path nodes =
 applyEvents :: Ref.Ref State
             -> Array Event
             -> AppHandler
-applyEvents node events =
+applyEvents stateRef events =
     void $ for events \ev -> do
-        result <- process' node ev
+        result <- process' stateRef ev
         case result of
-            Right newEvents -> applyEvents node newEvents
+            Right newEvents -> applyEvents stateRef newEvents
             Left  err       -> pure unit
 
 
 
 peersHandler :: StateRef -> AppHandler
-peersHandler node = do
+peersHandler stateRef = do
     origin <- getRequestHeader "x-origin"
-    (State state) <- liftEff $ Ref.readRef node
+    (State state) <- liftEff $ Ref.readRef stateRef
 
     -- Try to add the requesting peer to our list
     -- This should be moved out and executed on every request
     -- Not only that, if it's a new peer it should ask for its list
     case origin of
         Just peer ->
-            void $ process' node (ReceivePeers [peer])
+            void $ process' stateRef (ReceivePeers [peer])
         Nothing   ->
             pure unit
 
@@ -348,9 +348,9 @@ peersHandler node = do
 
 
 blockHandler :: StateRef -> AppHandler
-blockHandler node = do
+blockHandler stateRef = do
     hash' <- getRouteParam "hash"
-    state <- liftEff $ Ref.readRef node
+    state <- liftEff $ Ref.readRef stateRef
 
     case hash' of
         Just hash ->
@@ -373,9 +373,9 @@ blockHandler node = do
 
 
 txHandler :: StateRef -> AppHandler
-txHandler node = do
+txHandler stateRef = do
     hash' <- getRouteParam "hash"
-    state <- liftEff $ Ref.readRef node
+    state <- liftEff $ Ref.readRef stateRef
 
     case hash' of
         Just hash ->
@@ -400,9 +400,9 @@ txHandler node = do
 
 
 blockAfterHandler :: StateRef -> AppHandler
-blockAfterHandler node = do
+blockAfterHandler stateRef = do
     hash' <- getRouteParam "hash"
-    state <- liftEff $ Ref.readRef node
+    state <- liftEff $ Ref.readRef stateRef
 
     case hash' of
         Just hash ->
@@ -425,8 +425,8 @@ blockAfterHandler node = do
 
 
 announcementForBlock :: StateRef -> Hash -> String -> AppHandler
-announcementForBlock node hash origin = do
-    state <- liftEff $ Ref.readRef node
+announcementForBlock stateRef hash origin = do
+    state <- liftEff $ Ref.readRef stateRef
     let
         State { blockchain } =
             state
@@ -442,12 +442,12 @@ announcementForBlock node hash origin = do
         Left  _     -> do
             { response } <- liftAff (Affjax.get origin)
             let event = map ReceiveBlock (decodeJson response)
-            Either.either logError (process node) event
+            Either.either logError (process stateRef) event
 
 
 announcementForTx :: StateRef -> Hash -> String -> AppHandler
-announcementForTx node hash origin = do
-    state <- liftEff $ Ref.readRef node
+announcementForTx stateRef hash origin = do
+    state <- liftEff $ Ref.readRef stateRef
     let
         State { blockchain, memPool } =
             state
@@ -464,12 +464,12 @@ announcementForTx node hash origin = do
             { response } <- liftAff (Affjax.get origin)
 
             let event = map ReceiveTx (decodeJson response)
-            Either.either logError (process node) event
+            Either.either logError (process stateRef) event
 
 
 
 announce :: Announcement -> StateRef -> AppHandler
-announce what state = do
+announce what stateRef = do
     hash   <- getRouteParam    "hash"
     origin <- getRequestHeader "x-origin"
 
@@ -478,14 +478,14 @@ announce what state = do
                 AnnounceBlock       -> announcementForBlock
                 AnnounceTransaction -> announcementForTx
 
-    pure (callback state) <*> hash <*> origin
+    pure (callback stateRef) <*> hash <*> origin
         # Maybe.maybe (logError "Invalid data at /announce") id
 
 
 
 ledgerHandler :: StateRef -> AppHandler
-ledgerHandler node = do
-    state <- liftEff $ Ref.readRef node
+ledgerHandler stateRef = do
+    state <- liftEff $ Ref.readRef stateRef
 
     let State { blockchain } = state
 
@@ -507,19 +507,19 @@ ledgerHandler node = do
 
 
 transferHandler :: StateRef -> AppHandler
-transferHandler node = do
+transferHandler stateRef = do
     address <- getRouteParam "address"
     amount' <- getRouteParam "amount"
     
     let amount = amount' >>= Int.fromString
 
-    pure (transferHandler' node) <*> address <*> amount
+    pure (transferHandler' stateRef) <*> address <*> amount
         # Maybe.maybe (logError "invalid transfer data") id
 
 
 transferHandler' :: StateRef -> String -> Int -> AppHandler
-transferHandler' node address amount = do
-    State state <- liftEff $ Ref.readRef node
+transferHandler' stateRef address amount = do
+    State state <- liftEff $ Ref.readRef stateRef
     now         <- liftEff Now.now
 
     let
@@ -537,17 +537,17 @@ transferHandler' node address amount = do
         tx' = Tx.createTransaction state.keyPair.private header
 
     case tx' of
-        Just tx -> transferHandler'' node state.blockchain tx
+        Just tx -> transferHandler'' stateRef state.blockchain tx
         Nothing -> logError "Unable to create transaction"
 
 
 
 transferHandler'' :: StateRef -> Blockchain -> Transaction -> AppHandler
-transferHandler'' node blockchain tx = do
+transferHandler'' stateRef blockchain tx = do
     case validateTx blockchain tx of
         Right _ -> do
             logInfo "Transaction for transfer created"
-            process node (ReceiveTx tx)
+            process stateRef (ReceiveTx tx)
 
         Left err ->
             logError (describeTransferError err)
@@ -562,13 +562,16 @@ validateTx blockchain tx = do
 
 
 mineHandler :: StateRef -> AppHandler
-mineHandler node = do
-    State { keyPair, blockchain, memPool } <- liftEff $ Ref.readRef node
+mineHandler stateRef = do
+    State { keyPair, blockchain, memPool } <- liftEff $ Ref.readRef stateRef
+
+    let receive block =
+            process stateRef (ReceiveBlock block)
 
     case Array.last blockchain of
         Just prevBlock ->
             Block.mineBlock memPool keyPair prevBlock
-                # Maybe.maybe (logError "Could not mine block") (process node <<< ReceiveBlock)
+                # Maybe.maybe (logError "Could not mine block") receive
 
         Nothing -> logError "Empty blockchain"
 
@@ -576,14 +579,14 @@ mineHandler node = do
 
 
 bootHandler :: StateRef -> AppHandler
-bootHandler node = do
+bootHandler stateRef = do
     ip'   <- getQueryParam "ip"
-    state <- liftEff $ Ref.readRef node
+    state <- liftEff $ Ref.readRef stateRef
 
     case ip' of
         Just ip -> do
             events <- liftAff $ processEffects state (RequestPeers ip)
-            applyEvents node events
+            applyEvents stateRef events
             Express.sendJson "ok"
 
         Nothing ->
@@ -620,8 +623,8 @@ findTx blockchain memPool hash =
 
 
 logger :: StateRef -> AppHandler
-logger node = do
-    State state <- liftEff $ Ref.readRef node
+logger stateRef = do
+    State state <- liftEff $ Ref.readRef stateRef
     url         <- getOriginalUrl
 
     let port = state.name
@@ -631,39 +634,39 @@ logger node = do
 
 
 appSetup :: StateRef -> Express.AppM AppEffects Unit
-appSetup state = do
+appSetup stateRef = do
     liftEff $ Console.log "Setting up"
 
     Express.setProp "json spaces" 4.0
-    Express.use (logger state)
+    Express.use (logger stateRef)
 
-    Express.get "/"                             (indexHandler      state)
+    Express.get "/"                             (indexHandler      stateRef)
     
     -- Public stuff -> called by other peers
-    Express.get "/peers"                        (peersHandler      state)
-    Express.get "/block/:hash"                  (blockHandler      state)
-    Express.get "/transaction/:hash"            (txHandler         state)
-    Express.get "/block-after/:hash"            (blockAfterHandler state)
+    Express.get "/peers"                        (peersHandler      stateRef)
+    Express.get "/block/:hash"                  (blockHandler      stateRef)
+    Express.get "/transaction/:hash"            (txHandler         stateRef)
+    Express.get "/block-after/:hash"            (blockAfterHandler stateRef)
 
     -- contain x-origin to fetch the whole content
-    Express.get "/announce/block/:hash"         (announce AnnounceBlock       state)
-    Express.get "/announce/transaction/:hash"   (announce AnnounceTransaction state)
+    Express.get "/announce/block/:hash"         (announce AnnounceBlock       stateRef)
+    Express.get "/announce/transaction/:hash"   (announce AnnounceTransaction stateRef)
 
     -- Private stuff -> called by client
     -- issue transfers from this node to another peer
-    Express.get "/boot"                         (bootHandler     state)
-    Express.get "/ledger"                       (ledgerHandler   state)
-    Express.get "/transfer/:address/:amount"    (transferHandler state)
-    Express.get "/mine-block"                   (mineHandler     state)
+    Express.get "/boot"                         (bootHandler     stateRef)
+    Express.get "/ledger"                       (ledgerHandler   stateRef)
+    Express.get "/transfer/:address/:amount"    (transferHandler stateRef)
+    Express.get "/mine-block"                   (mineHandler     stateRef)
 
-    -- useOnError (errorHandler state)
+    -- useOnError (errorHandler stateRef)
 
 
 main :: Int -> State -> Eff AppEffects Http.Server
 main port state = do
-    node <- Ref.newRef state
+    stateRef <- Ref.newRef state
 
-    Express.listenHttp (appSetup node) port \_ ->
+    Express.listenHttp (appSetup stateRef) port \_ ->
         Console.log $ "Listening on " <> show port
 
 
