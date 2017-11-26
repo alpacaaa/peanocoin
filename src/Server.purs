@@ -179,19 +179,17 @@ describeInvalidTxError = case _ of
 
 indexHandler :: StateRef -> AppHandler
 indexHandler stateRef = do
-    State { keyPair, blockchain, memPool, nodes } <- liftEff $ Ref.readRef stateRef
+    State { keyPair, blockchain, memPool, peers } <- liftEff $ Ref.readRef stateRef
     let
         address =
             Address.pkToAddress keyPair.public
                 # Maybe.maybe "error computing address" Address.unwrap
 
-        peers = peersToArray nodes
-
         body =
             { address:    address
             , blockchain: Argonaut.encodeJson blockchain
             , memPool:    Argonaut.encodeJson memPool
-            , peers:      Argonaut.encodeJson peers
+            , peers:      Argonaut.encodeJson $ peersToArray peers
             }
 
     Express.sendJson body
@@ -262,10 +260,10 @@ processEffects (State state) = case _ of
             path   = "/announce/block/" <> hash
             origin = state.host <> "/block/" <> hash
 
-        _ <- liftAff $ broadcast origin path state.nodes
+        _ <- liftAff $ broadcast origin path state.peers
 
         -- Make sure we have the most recent version of the blockchain
-        foldM (fetchNextBlock hash) mempty state.nodes
+        foldM (fetchNextBlock hash) mempty state.peers
 
     SendTx tx -> do
         let
@@ -273,7 +271,7 @@ processEffects (State state) = case _ of
             path   = "/announce/transaction/" <> hash
             origin = state.host <> "/transaction/" <> hash
 
-        _ <- liftAff $ broadcast origin path state.nodes
+        _ <- liftAff $ broadcast origin path state.peers
         pure []
 
     RequestPeers peer -> do
@@ -291,7 +289,7 @@ processEffects (State state) = case _ of
 
     RequestBlockAfter hash -> do
         liftEff $ Console.log ("Requesting block after " <> hash)
-        foldM (fetchNextBlock hash) mempty state.nodes
+        foldM (fetchNextBlock hash) mempty state.peers
 
     NoEffect -> pure []
 
@@ -340,7 +338,7 @@ peersHandler stateRef = do
         Nothing   ->
             pure unit
 
-    let peers = Array.cons state.host (peersToArray state.nodes)
+    let peers = Array.cons state.host (peersToArray state.peers)
     logInfo $ "Sending " <> (show $ Array.length peers) <> " peers"
 
     Express.sendJson $ Argonaut.encodeJson peers

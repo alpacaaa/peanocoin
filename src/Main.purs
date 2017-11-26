@@ -49,7 +49,7 @@ main = do
                     { keyPair:    pair
                     , host:       host
                     , name:       (show port)
-                    , nodes:      mempty
+                    , peers:      mempty
                     , blockchain: [Block.genesisBlock]
                     , memPool:    mempty
                     }

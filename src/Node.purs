@@ -45,7 +45,7 @@ data State = State
     { keyPair    :: Crypto.KeyPair
     , host       :: Peer            -- this node own public address
     , name       :: String
-    , nodes      :: Set Peer
+    , peers      :: Set Peer
     , blockchain :: Blockchain
     , memPool    :: MemPool
     }
@@ -73,8 +73,8 @@ handlePeers :: State -> Array Peer -> Result
 handlePeers (State state) ips =
     let
         newIps   = Set.fromFoldable ips
-        nodes    = Set.union state.nodes newIps
-        newState = state { nodes = nodes }
+        peers    = Set.union state.peers newIps
+        newState = state { peers = peers }
 
         requestNextBlock block
             = withEffect
