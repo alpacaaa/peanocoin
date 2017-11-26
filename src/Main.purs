@@ -39,19 +39,21 @@ main = do
 
     pair <- Crypto.generateKeyPair
 
-    let { port } = args
-    Console.log $ "Will listen on port: " <> (show port)
+    let
+        port =
+            args.port
 
-    let host  = "http://localhost:" <> (show port)
+        host =
+            "http://localhost:" <> (show port)
 
-    let initialState
-                    = Node.State
-                    { keyPair:    pair
-                    , host:       host
-                    , name:       (show port)
-                    , peers:      mempty
-                    , blockchain: [Block.genesisBlock]
-                    , memPool:    mempty
-                    }
+        initialState
+            = Node.State
+            { keyPair:    pair
+            , host:       host
+            , name:       (show port)
+            , peers:      mempty
+            , blockchain: [Block.genesisBlock]
+            , memPool:    mempty
+            }
 
     void $ Server.main port initialState

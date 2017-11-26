@@ -57,6 +57,7 @@ import Peanocoin.Ledger as Ledger
 import Peanocoin.MemPool as MemPool
 import Peanocoin.Node as Node
 import Peanocoin.Transaction as Tx
+import Peanocoin.Describe as Describe
 
 
 type AppEffects = 
@@ -95,88 +96,6 @@ logError error = do
     Express.sendJson error
 
 
-describeEvent :: Event -> String
-describeEvent = case _ of
-    ReceiveBlock block ->
-        "Block " <> (Block.hashBlock block) <> " is valid and added to the blockchain"
-
-    ReceiveTx tx ->
-        "Transaction " <> (Tx.hashTransaction tx) <> "is valid and added to the mempool"
-
-    ReceivePeers peers ->
-        (show $ Array.length peers) <> " peers added to the list of known peers"
-
-
-describeError :: Error -> String
-describeError = case _ of
-    ErrorBlock err ->
-        describeInvalidBlockError err
-    ErrorTx err ->
-        describeInvalidTxError err
-    ErrorBlockNotFound err ->
-        describeFindBlockError err
-
-
-describeTransferError :: TransferError -> String
-describeTransferError = case _ of
-    AddressDoesNotExist (Address address) ->
-        "Address does not exist: " <> address
-    InvalidPublicKey ->
-        "Invalid Public Key"
-    InvalidTransferAmount amount ->
-        "Transfer amount " <> (show amount) <> " is invalid"
-    InsufficientBalance (Address address) balance ->
-        "Current balance of address " <> address <> "is: " <> (show balance)
-        <> " which is insufficient for the transfer requested"
-
-
-describeFindBlockError :: FindBlockError -> String
-describeFindBlockError = case _ of
-    FindBlockInvalidHash hash ->
-        "Block not found with this hash: " <> hash
-    FindBlockNoMoreBlocks ->
-        "There are no more blocks!"
-
-
-
-describeInvalidBlockError :: InvalidBlock -> String
-describeInvalidBlockError = case _ of
-    InvalidBlockIndex ->
-        "Block index is invalid"
-    InvalidBlockHash ->
-        "Block hash is invalid"
-    InvalidBlockMerkleRoot ->
-        "Block merkle root is invalid"
-    InvalidBlockNoReward ->
-        "Block has no reward transaction"
-    InvalidRewardTxCount ->
-        "Block has too many reward transactions"
-    InvalidRewardTxPosition ->
-        "Block has reward transaction in a wrong position. It should be the last"
-    InvalidRewardTx given expected ->
-        "Reward transaction has an unexpected amount. Was expecting: "
-        <> (show expected)
-        <> " but received: " <> (show given)
-    InvalidPrevBlockHash ->
-        "Previous block hash is invalid"
-    InvalidBlockTx err ->
-        describeInvalidTxError err
-    InvalidEmptyBlockchain ->
-        "Blockchain is empty"
-
-
-describeInvalidTxError :: InvalidTransaction -> String
-describeInvalidTxError = case _ of
-    InvalidTransactionSignature ->
-        "Transaction signature is invalid"
-    TxMustBeTransfer ->
-        "Only transactions of type Transfer are accepted"
-    TxAlreadyInMemPool ->
-        "Transaction is already known and in the mempool"
-    TxAlreadyInBlock hash ->
-        "Transaction is already known and mined in block: " <> hash
-
-
 indexHandler :: StateRef -> AppHandler
 indexHandler stateRef = do
     State { keyPair, blockchain, memPool, peers } <- liftEff $ Ref.readRef stateRef
@@ -202,7 +121,7 @@ handleUpdate result =
             Express.sendJson "ok"
         
         Left err -> do
-            let msg = describeError err
+            let msg = Describe.error err
             logError msg
             Express.sendJson msg
 
@@ -218,7 +137,7 @@ process' :: forall m. (MonadAff AppEffects m)
          -> Event
          -> m (Either Error (Array Event))
 process' stateRef event = do
-    logInfo (describeEvent event)
+    logInfo (Describe.event event)
 
     current <- liftEff $ Ref.readRef stateRef
     let result = Node.updateState current event
@@ -415,7 +334,7 @@ blockAfterHandler stateRef = do
                     Express.sendJson (Argonaut.encodeJson block)
 
                 Left error  ->
-                    logError (describeFindBlockError error)
+                    logError (Describe.findBlockError error)
         
         Nothing ->
             logError "Invalid block hash"
@@ -501,7 +420,7 @@ ledgerHandler stateRef = do
 
             Express.sendJson $ Argonaut.encodeJson strmap
 
-        Left error -> logError (describeTransferError error)
+        Left error -> logError (Describe.transferError error)
 
 
 transferHandler :: StateRef -> AppHandler
@@ -548,7 +467,7 @@ transferHandler'' stateRef blockchain tx = do
             process stateRef (ReceiveTx tx)
 
         Left err ->
-            logError (describeTransferError err)
+            logError (Describe.transferError err)
 
 
 validateTx :: Blockchain -> Transaction -> Either Ledger.TransferError Unit
