@@ -109,12 +109,10 @@ func spawn(wg *sync.WaitGroup, program string, args ...string) {
 	wg.Done()
 }
 
-func initNode(wg *sync.WaitGroup, port int) Node {
+func initNode(port int) Node {
 	node := Node{
 		Port: port,
 	}
-
-	go spawn(wg, "node", "spawn-peanos.js", "--port", strconv.Itoa(port))
 
 	return node.update()
 }
@@ -138,13 +136,17 @@ func integrationTest() {
 	killPending()
 
 	var wg sync.WaitGroup
+
+	go spawn(&wg, "node", "spawn-peanos.js", "--port", "3000")
+	go spawn(&wg, "node", "spawn-peanos.js", "--port", "3001")
+	go spawn(&wg, "node", "spawn-peanos.js", "--port", "3002")
+
 	wg.Add(3)
-
-	node1 := initNode(&wg, 3000)
-	node2 := initNode(&wg, 3001)
-	node3 := initNode(&wg, 3002)
-
 	time.Sleep(2 * time.Second)
+
+	node1 := initNode(3000)
+	node2 := initNode(3001)
+	node3 := initNode(3002)
 
 	fmt.Println(node1.Address)
 	fmt.Println(node2.Address)
@@ -233,7 +235,8 @@ func networkTest() {
 	for i := 0; i < nodeCount; i++ {
 		port := 3000 + i
 		time.Sleep(500 * time.Millisecond)
-		nodes = append(nodes, initNode(&wg, port))
+		go spawn(&wg, "node", "spawn-peanos.js", "--port", strconv.Itoa(port))
+		nodes = append(nodes, initNode(port))
 	}
 
 	for i := 0; i < nodeCount; i++ {
