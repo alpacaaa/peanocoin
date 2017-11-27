@@ -104,7 +104,7 @@ sampleState = do
                     { keyPair:    a
                     , host:       "localhost:3000"
                     , name:       "test-node"
-                    , nodes:      Set.fromFoldable ["a", "b", "c"]
+                    , peers:      Set.fromFoldable ["a", "b", "c"]
                     , blockchain: sampleChain pairs
                     , memPool:    mempty
                     }
@@ -192,11 +192,11 @@ newPeerTests = do
     let
         ips = ["b", "d"]
 
-        { state: State { nodes } } =
+        { state: State { peers } } =
             tryE $ Node.updateState state (ReceivePeers ips)
 
-    Set.size nodes       `shouldEqual` 4
-    assert (Set.member "b" nodes)
+    Set.size peers       `shouldEqual` 4
+    assert (Set.member "b" peers)
     pure unit
 
 
