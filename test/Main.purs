@@ -89,7 +89,7 @@ sampleChain pairs =
             in
             Array.snoc acc new
     in
-    Array.foldl build [Block.genesisBlock] pairs
+    Array.foldl build [Block.genesisBlock 1] pairs
 
 
 sampleState :: Eff (RunnerEffects ()) SampleState

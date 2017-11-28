@@ -45,13 +45,16 @@ main = do
         host =
             "http://localhost:" <> (show port)
 
+        difficulty =
+            5
+
         initialState
             = Node.State
             { keyPair:    pair
             , host:       host
             , name:       (show port)
             , peers:      mempty
-            , blockchain: [Block.genesisBlock]
+            , blockchain: [Block.genesisBlock difficulty]
             , memPool:    mempty
             }
 

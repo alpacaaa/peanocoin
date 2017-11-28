@@ -226,14 +226,14 @@ checkProofOfWork header =
 
 
 
-genesisBlock :: Block
-genesisBlock =
+genesisBlock :: Int -> Block
+genesisBlock difficulty =
     let
         header =
             { previousHash: "0"
             , merkleRoot: ""
             , nonce: 0
-            , difficulty: 0
+            , difficulty: difficulty
             }
 
         headerHash = hashBlockHeader header
