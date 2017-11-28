@@ -17,8 +17,8 @@ A PoC criptocurrency written in Purescript. Inspired by [nanocoin](https://githu
 ### Setup
 
 ```bash
-bower install --dev
-npm install --dev
+bower install
+npm install
 pulp build
 ```
 
@@ -114,6 +114,8 @@ Mining difficulty is currently set to 5 leading zeros (that is, the hash of a va
 Unit tests
 
 ```bash
+bower install --dev
+npm install --dev
 pulp test
 ```
 
