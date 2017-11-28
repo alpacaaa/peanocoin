@@ -40,7 +40,6 @@ You can spawn multiple nodes on the same machine.
 
 Things I need to fix.
 
-- [ ] Mining difficulty is static: Proof of Work is practically non existant as all mining is currently set to `0` difficulty. Ideally, mining a block should take a few seconds to demonstrate how PoW is useful in running a blockchain.
 - [ ] Reward is static, maybe it could decrease over time (not that big of a deal).
 - [ ] Node discovery is still a bit rusty. I'd like peers to be added to a node's peers list whenever a request gets through, not just when explicitely requesting `/peers`.
 
@@ -105,6 +104,8 @@ The transaction is broadcasted to known peers and included in the mempool.
 Mines a block including valid transactions present in the mempool. (you can still mine a block even with an empty mempool).
 
 The freshly mined block is sent over the network so that it gets included in other nodes blockchains.
+
+Mining difficulty is currently set to 5 leading zeros (that is, the hash of a valid block should start with `00000` for it to be included in the blockchain). This is enough to make PoW noticeable (should take a few seconds to mine a block).
 
 
 
