@@ -197,6 +197,16 @@ newPeerTests = do
 
     Set.size peers       `shouldEqual` 4
     assert (Set.member "b" peers)
+
+    -- shouldn't add itself to the list
+    let
+        State { host } =
+            state
+
+        { state: State { peers } } =
+            tryE $ Node.updateState state (ReceivePeers [host])
+
+    assert (not $ Set.member host peers)
     pure unit
 
 

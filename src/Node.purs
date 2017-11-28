@@ -73,6 +73,7 @@ handlePeers :: State -> Array Peer -> Result
 handlePeers (State state) ips =
     let
         newIps   = Set.fromFoldable ips
+                 # Set.delete state.host
         peers    = Set.union state.peers newIps
         newState = state { peers = peers }
 
