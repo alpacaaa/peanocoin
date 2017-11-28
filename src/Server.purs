@@ -145,8 +145,13 @@ process' stateRef event = do
     case result of
         Right { state, effect } -> do
             liftEff $ Ref.writeRef stateRef state
-            events <- liftAff $ processEffects state effect
-            pure (Right events)
+
+            case effect of
+                Just fx -> do
+                    events <- liftAff $ processEffects state fx
+                    pure (Right events)
+                Nothing ->
+                    pure (Right [])
 
         Left err -> pure (Left err)
 
@@ -209,8 +214,6 @@ processEffects (State state) = case _ of
     RequestBlockAfter hash -> do
         liftEff $ Console.log ("Requesting block after " <> hash)
         foldM (fetchNextBlock hash) mempty state.peers
-
-    NoEffect -> pure []
 
 
 

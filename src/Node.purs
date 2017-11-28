@@ -38,7 +38,6 @@ data Effect
     | SendTx            Transaction
     | RequestPeers      Peer -- my ip
     | RequestBlockAfter Hash
-    | NoEffect
 
 
 data State = State
@@ -58,15 +57,15 @@ data Error
 
 
 type Result =
-    Either Error { state :: State, effect :: Effect }
+    Either Error { state :: State, effect :: Maybe Effect }
 
 
 noEffects :: State -> Result
-noEffects state = Right { state, effect: NoEffect }
+noEffects state = Right { state, effect: Nothing }
 
 
 withEffect :: State -> Effect -> Result
-withEffect state effect = Right { state, effect }
+withEffect state effect = Right { state, effect: Just effect }
 
 
 handlePeers :: State -> Array Peer -> Result
