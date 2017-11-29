@@ -145,7 +145,12 @@ handleTransaction (State state) tx
 
 handlePeerDiscovered :: State -> Peer -> Result
 handlePeerDiscovered (State state) peer =
-    noEffects (State state)
+    if Set.member peer state.peers then
+        -- peer is already known
+        noEffects (State state)
+    else
+        handlePeers (State state) [peer]
+
 
 
 updateState :: State -> Event -> Result
