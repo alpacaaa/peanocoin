@@ -1,16 +1,15 @@
 module Peanocoin.Describe where
 
-import Peanocoin.Node (Event(..), Error(..))
+import Prelude
+
+import Data.Array as Array
 import Peanocoin.Address (Address(..))
 import Peanocoin.Block (InvalidBlock(..))
+import Peanocoin.Block as Block
 import Peanocoin.Blockchain (FindBlockError(..))
 import Peanocoin.Ledger (TransferError(..))
+import Peanocoin.Node (Error(..), Event(..))
 import Peanocoin.Transaction (InvalidTransaction(..))
-
-import Prelude
-import Data.Array as Array
-
-import Peanocoin.Block as Block
 import Peanocoin.Transaction as Tx
 
 
@@ -25,6 +24,9 @@ event = case _ of
 
     ReceivePeers peers ->
         (show $ Array.length peers) <> " peers added to the list of known peers"
+
+    PeerDiscovered peer ->
+        "New peer discovered, check if we are up to date"
 
 
 error :: Error -> String

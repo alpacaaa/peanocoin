@@ -31,6 +31,7 @@ data Event
     = ReceivePeers   (Array Peer)
     | ReceiveBlock   Block
     | ReceiveTx      Transaction
+    | PeerDiscovered Peer
 
 
 data Effect
@@ -142,16 +143,24 @@ handleTransaction (State state) tx
                 = Left (ErrorTx err)
 
 
+handlePeerDiscovered :: State -> Peer -> Result
+handlePeerDiscovered (State state) peer =
+    noEffects (State state)
+
+
 updateState :: State -> Event -> Result
 updateState state = case _ of
-    ReceivePeers nodes ->
-        handlePeers state nodes
+    ReceivePeers peers ->
+        handlePeers state peers
 
     ReceiveBlock block ->
         handleBlock state block
 
     ReceiveTx tx ->
         handleTransaction state tx
+
+    PeerDiscovered peer ->
+        handlePeerDiscovered state peer
 
 
 
