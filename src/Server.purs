@@ -249,16 +249,9 @@ applyEvents stateRef events =
 peersHandler :: StateRef -> AppHandler
 peersHandler stateRef = do
     origin <- getRequestHeader "x-origin"
-    (State state) <- liftEff $ Ref.readRef stateRef
+    void $ liftAff $ discoverPeer stateRef origin
 
-    -- Try to add the requesting peer to our list
-    -- This should be moved out and executed on every request
-    -- Not only that, if it's a new peer it should ask for its list
-    case origin of
-        Just peer ->
-            void $ process' stateRef (ReceivePeers [peer])
-        Nothing   ->
-            pure unit
+    (State state) <- liftEff $ Ref.readRef stateRef
 
     let peers = Array.cons state.host (peersToArray state.peers)
     logInfo $ "Sending " <> (show $ Array.length peers) <> " peers"
@@ -347,6 +340,7 @@ blockAfterHandler stateRef = do
 announcementForBlock :: StateRef -> Hash -> String -> AppHandler
 announcementForBlock stateRef hash origin = do
     state <- liftEff $ Ref.readRef stateRef
+
     let
         State { blockchain } =
             state
@@ -368,6 +362,7 @@ announcementForBlock stateRef hash origin = do
 announcementForTx :: StateRef -> Hash -> String -> AppHandler
 announcementForTx stateRef hash origin = do
     state <- liftEff $ Ref.readRef stateRef
+
     let
         State { blockchain, memPool } =
             state
@@ -392,6 +387,8 @@ announce :: Announcement -> StateRef -> AppHandler
 announce what stateRef = do
     hash   <- getRouteParam    "hash"
     origin <- getRequestHeader "x-origin"
+
+    void $ liftAff $ discoverPeer stateRef origin
 
     let callback =
             case what of
@@ -539,6 +536,13 @@ findTx blockchain memPool hash =
         Nothing     -> MemPool.find memPool hash
 
 
+discoverPeer :: StateRef -> Maybe String -> Aff AppEffects Unit
+discoverPeer stateRef origin =
+    case origin of
+        Just peer ->
+            void $ process' stateRef (ReceivePeers [peer])
+        Nothing ->
+            pure unit
 
 
 
