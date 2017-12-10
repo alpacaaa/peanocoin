@@ -244,18 +244,30 @@ func networkTest() {
 		nodes = append(nodes, initNode(port))
 	}
 
+	prevPeer := nodes[0]
+
 	for i := 0; i < nodeCount; i++ {
-		// TODO: unknown nodes aren't added to the list of peers
-		// so most nodes won't know about others
 		peer := nodes[rand.Intn(nodeCount-1)]
 		nodes[i].boot(peer)
+		time.Sleep(500 * time.Millisecond)
+
+		nodes[i].boot(prevPeer)
 		time.Sleep(1 * time.Second)
+
+		prevPeer = nodes[i]
 	}
 
 	for i := 0; i < nodeCount; i++ {
 		nodes[i].mineBlock()
 		time.Sleep(1 * time.Second)
 	}
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].update()
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	checkLedgers(nodes...)
 
 	wg.Wait()
 }
