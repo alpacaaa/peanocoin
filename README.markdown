@@ -40,6 +40,9 @@ You can spawn multiple nodes on the same machine.
 
 Things I need to fix.
 
+- [ ] Improve integration tests.
+- [ ] Improve code readability (especially `Server.purs`).
+- [ ] Improve UX for first time users so that it's clearer what's happening.
 - [ ] Reward is static, maybe it could decrease over time (not that big of a deal).
 
 
