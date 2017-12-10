@@ -236,6 +236,11 @@ func networkTest() {
 		port := 3000 + i
 		time.Sleep(500 * time.Millisecond)
 		go spawn(&wg, "node", "spawn-peanos.js", "--port", strconv.Itoa(port))
+	}
+
+	for i := 0; i < nodeCount; i++ {
+		port := 3000 + i
+		time.Sleep(500 * time.Millisecond)
 		nodes = append(nodes, initNode(port))
 	}
 
@@ -256,6 +261,6 @@ func networkTest() {
 }
 
 func main() {
-	integrationTest()
-	// networkTest()
+	// integrationTest()
+	networkTest()
 }
