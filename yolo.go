@@ -221,8 +221,6 @@ func integrationTest() {
 }
 
 func networkTest() {
-	// still not working
-
 	killPending()
 
 	var wg sync.WaitGroup
@@ -269,6 +267,41 @@ func networkTest() {
 
 	checkLedgers(nodes...)
 
+	// All peers own 100 coins
+	// Let's get some transfers going
+
+	red := nodes[0]
+	blue := nodes[1]
+	green := nodes[2]
+	yellow := nodes[3]
+	black := nodes[4]
+	orange := nodes[5]
+	gray := nodes[6]
+	brown := nodes[7]
+	cyan := nodes[8]
+	white := nodes[9]
+
+	green.transfer(red, 50)
+	green.transfer(yellow, 25)
+
+	yellow.transfer(brown, 75)
+
+	blue.transfer(white, 0)
+	black.transfer(orange, 0)
+	gray.transfer(orange, 0)
+
+	time.Sleep(500 * time.Millisecond)
+	cyan.mineBlock()
+	time.Sleep(1000 * time.Millisecond)
+
+	for i := 0; i < nodeCount; i++ {
+		nodes[i].update()
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	checkLedgers(nodes...)
+
+	fmt.Println("DONE!")
 	wg.Wait()
 }
 
