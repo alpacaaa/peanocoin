@@ -1,13 +1,5 @@
 module Peanocoin.Server where
 
-import Peanocoin.Node (State(..), Event(..), Effect(..), Error(..), Peer)
-import Peanocoin.Address (Address(..))
-import Peanocoin.Block (InvalidBlock(..))
-import Peanocoin.Blockchain (Blockchain(..), FindBlockError(..))
-import Peanocoin.Ledger (TransferError(..))
-import Peanocoin.MemPool (MemPool(..))
-import Peanocoin.Transaction (Transaction(..), TransactionHeader(..), InvalidTransaction(..))
-
 import Prelude
 
 import Control.Monad.Aff (Aff)
@@ -33,6 +25,7 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Monoid (mempty)
+import Data.Nullable as Nullable
 import Data.Set (Set)
 import Data.Set as Set
 import Data.StrMap as StrMap
@@ -40,6 +33,7 @@ import Data.Time.Duration (Seconds(..))
 import Data.Time.Duration as Duration
 import Data.Traversable (traverse, for)
 import Data.Tuple (Tuple(..))
+-- import Debug.Trace as Debug
 import Network.HTTP.Affjax as Affjax
 import Network.HTTP.RequestHeader (RequestHeader(..))
 import Node.Express.App as Express
@@ -48,16 +42,23 @@ import Node.Express.Request (getOriginalUrl, getQueryParam, getRequestHeader, ge
 import Node.Express.Response as Express
 import Node.Express.Types as Express
 import Node.HTTP as Http
-
-import Peanocoin.Hash (Hash)
+import Node.URL as URL
+import Peanocoin.Address (Address(..))
 import Peanocoin.Address as Address
+import Peanocoin.Block (InvalidBlock(..))
 import Peanocoin.Block as Block
+import Peanocoin.Blockchain (Blockchain(..), FindBlockError(..))
 import Peanocoin.Blockchain as Blockchain
-import Peanocoin.Ledger as Ledger
-import Peanocoin.MemPool as MemPool
-import Peanocoin.Node as Node
-import Peanocoin.Transaction as Tx
 import Peanocoin.Describe as Describe
+import Peanocoin.Hash (Hash)
+import Peanocoin.Ledger (TransferError(..))
+import Peanocoin.Ledger as Ledger
+import Peanocoin.MemPool (MemPool(..))
+import Peanocoin.MemPool as MemPool
+import Peanocoin.Node (State(..), Event(..), Effect(..), Error(..), Peer)
+import Peanocoin.Node as Node
+import Peanocoin.Transaction (Transaction(..), TransactionHeader(..), InvalidTransaction(..))
+import Peanocoin.Transaction as Tx
 
 
 type AppEffects = 
@@ -536,10 +537,26 @@ findTx blockchain memPool hash =
         Nothing     -> MemPool.find memPool hash
 
 
+
+nullableToString :: Nullable.Nullable String -> String
+nullableToString field =
+    Nullable.toMaybe field
+    # Maybe.maybe "" id
+
+
 discoverPeer :: StateRef -> Maybe String -> Aff AppEffects Unit
-discoverPeer stateRef origin =
-    case origin of
-        Just peer ->
+discoverPeer stateRef maybeOrigin =
+    case maybeOrigin of
+        Just origin ->
+            let
+                url =
+                    URL.parse origin
+
+                peer =
+                    nullableToString url.protocol
+                    <> "//"
+                    <> nullableToString url.host
+            in
             void $ process' stateRef (ReceivePeers [peer])
         Nothing ->
             pure unit
@@ -590,11 +607,4 @@ main port state = do
 
     Express.listenHttp (appSetup stateRef) port \_ ->
         Console.log $ "Listening on " <> show port
-
-
-
-
-
-
-
 
