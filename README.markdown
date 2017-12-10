@@ -41,7 +41,6 @@ You can spawn multiple nodes on the same machine.
 Things I need to fix.
 
 - [ ] Reward is static, maybe it could decrease over time (not that big of a deal).
-- [ ] Node discovery is still a bit rusty. I'd like peers to be added to a node's peers list whenever a request gets through, not just when explicitely requesting `/peers`.
 
 
 
